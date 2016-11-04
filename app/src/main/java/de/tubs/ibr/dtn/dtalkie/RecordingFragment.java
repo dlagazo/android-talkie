@@ -5,9 +5,14 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.media.AudioManager;
+import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.provider.MediaStore;
+import android.renderscript.ScriptGroup;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -19,9 +24,23 @@ import android.view.animation.LinearInterpolator;
 import android.view.animation.ScaleAnimation;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
+
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Serializable;
+import java.net.URI;
+import java.security.Timestamp;
+import java.sql.Time;
+import java.util.Date;
+
 import de.tubs.ibr.dtn.dtalkie.service.RecorderService;
 import de.tubs.ibr.dtn.dtalkie.service.Sound;
 import de.tubs.ibr.dtn.dtalkie.service.SoundFXManager;
+import de.tubs.ibr.dtn.dtalkie.service.TalkieService;
 import de.tubs.ibr.dtn.dtalkie.service.Utils;
 
 public class RecordingFragment extends Fragment {
@@ -36,7 +55,60 @@ public class RecordingFragment extends Fragment {
     private SoundFXManager mSoundManager = null;
     
     private float mAnimScaleHeight = 1.0f;
-    
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent imageReturnedIntent) {
+        super.onActivityResult(requestCode, resultCode, imageReturnedIntent);
+            switch (requestCode)
+            {
+                case 1888:
+                    if(resultCode == getActivity().RESULT_OK)
+                    {
+                        //Uri selectedImage = imageReturnedIntent.getData();
+
+                        try {
+                            Bitmap bitmap;
+                            if(imageReturnedIntent.getData()==null){
+                                bitmap = (Bitmap)imageReturnedIntent.getExtras().get("data");
+                            }else{
+                                bitmap = MediaStore.Images.Media.getBitmap(getActivity().getContentResolver(), imageReturnedIntent.getData());
+                            }
+                            //InputStream imageStream = getActivity().getContentResolver().openInputStream(selectedImage);
+                            //Bitmap yourSelectedImage = BitmapFactory.decodeStream(imageStream);
+                            Intent recorded_i = new Intent(getContext(), TalkieService.class);
+                            recorded_i.setAction(TalkieService.ACTION_RECORDED);
+                            Date d = new Date();
+
+                            File f = new File(getContext().getCacheDir(), d.toString());
+                            f.createNewFile();
+
+                            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                            bitmap.compress(Bitmap.CompressFormat.JPEG, 100 /*ignored for PNG*/, bos);
+                            byte[] bitmapdata = bos.toByteArray();
+
+//write the bytes in file
+                            FileOutputStream fos = new FileOutputStream(f);
+                            fos.write(bitmapdata);
+                            fos.flush();
+                            fos.close();
+
+                            recorded_i.putExtra("recfile", f);
+                            recorded_i.putExtra("destination", (Serializable) RecorderService.TALKIE_GROUP_EID);
+                            getContext().startService(recorded_i);
+                        } catch (FileNotFoundException e) {
+                            e.printStackTrace();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+
+                    }
+                    break;
+            }
+
+
+
+    }
+
     private OnTouchListener mTouchListener = new OnTouchListener() {
         @Override
         public boolean onTouch(View v, MotionEvent event) {
@@ -44,12 +116,15 @@ public class RecordingFragment extends Fragment {
                 case MotionEvent.ACTION_DOWN:
                     SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
                     if (prefs.getBoolean("ptt", false)) {
-                        startRecording();
+                        //startRecording();
+
                     }
                     break;
                     
                 case MotionEvent.ACTION_UP:
-                    toggleRecording();
+                    Intent cameraIntent = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
+                    startActivityForResult(cameraIntent, 1888);
+                    //toggleRecording();
                     break;
             }
             
@@ -133,6 +208,7 @@ public class RecordingFragment extends Fragment {
         boolean auto_stop = !prefs.getBoolean("ptt", false);
 
         // start recording
+
         RecorderService.startRecording(getActivity(), RecorderService.TALKIE_GROUP_EID, indicator, auto_stop);
     }
     

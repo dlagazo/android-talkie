@@ -41,6 +41,7 @@ import android.media.AudioManager.OnAudioFocusChangeListener;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Binder;
+import android.os.Environment;
 import android.os.IBinder;
 import android.os.ParcelFileDescriptor;
 import android.preference.PreferenceManager;
@@ -137,7 +138,7 @@ public class TalkieService extends DTNIntentService {
 			if (file != null)
 			{
 				Log.i(TAG, "New message received.");
-				
+
 				// process the file using the service
 				Intent recv_intent = new Intent(TalkieService.this, TalkieService.class);
 				recv_intent.setAction(ACTION_RECEIVED);
@@ -169,11 +170,11 @@ public class TalkieService extends DTNIntentService {
 		public TransferMode startBlock(Block block) {
 			if ((block.type == 1) && (file == null))
 			{
-				File folder = Utils.getStoragePath(TalkieService.this);
-				
+				//File folder = Utils.getStoragePath(TalkieService.this);
+				File folder = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
 				// create a new temporary file
 				try {
-					file = File.createTempFile("msg", ".3gp", folder);
+					file = File.createTempFile("msg", ".jpg", folder);
 					return TransferMode.FILEDESCRIPTOR;
 				} catch (IOException e) {
 					Log.e(TAG, "Can not create temporary file.", e);
@@ -199,6 +200,7 @@ public class TalkieService extends DTNIntentService {
 			{
 				// unset the payload file
 				Log.i(TAG, "File received: " + file.getAbsolutePath());
+
 			}
 		}
 
@@ -517,7 +519,9 @@ public class TalkieService extends DTNIntentService {
         }
         else if (ACTION_RECORDED.equals(action)) {
             File recfile = (File)intent.getSerializableExtra("recfile");
-            
+
+
+			//File recfile = new File("/sdcard/Music/m_BlueforLabrusca.mp3");
             // create a new bundle
             Bundle b = new Bundle();
             
@@ -546,7 +550,7 @@ public class TalkieService extends DTNIntentService {
                     Log.i(TAG, "Recording sent, BundleID: " + ret.toString());
                 }
                 
-                recfile.delete();
+                //recfile.delete();
             } catch (FileNotFoundException ex) {
                 Log.e(TAG, "Can not open message file for transmission", ex);
             } catch (SessionDestroyedException ex) {

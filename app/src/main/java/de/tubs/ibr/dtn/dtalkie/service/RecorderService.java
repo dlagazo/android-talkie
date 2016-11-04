@@ -7,9 +7,14 @@ import java.io.Serializable;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.location.Criteria;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.media.AudioManager;
 import android.media.AudioManager.OnAudioFocusChangeListener;
 import android.media.MediaRecorder;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.IBinder;
@@ -19,7 +24,7 @@ import android.util.Log;
 import de.tubs.ibr.dtn.api.EID;
 import de.tubs.ibr.dtn.api.GroupEndpoint;
 
-public class RecorderService extends Service {
+public class RecorderService extends Service implements LocationListener{
 
 	private static final String TAG = "RecorderService";
 
@@ -61,6 +66,9 @@ public class RecorderService extends Service {
     private ServiceHandler mServiceHandler;
     
     private AudioManager mAudioManager = null;
+
+    LocationManager mLocationManager;
+    Location loc;
     
     /**
      * static methods for better control of recorder service
@@ -95,7 +103,7 @@ public class RecorderService extends Service {
     public IBinder onBind(Intent intent) {
         return null;
     }
-    
+
     private final static class ServiceHandler extends Handler {
     	private RecorderService mService = null;
     	private boolean mOngoing = false;
@@ -138,7 +146,8 @@ public class RecorderService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        
+
+
         mServiceThread = new HandlerThread("HeadsetService");
         mServiceThread.start();
         
@@ -202,6 +211,26 @@ public class RecorderService extends Service {
 		}
     };
 
+    protected void getLocation() {
+
+            mLocationManager = (LocationManager)  this.getSystemService(Context.LOCATION_SERVICE);
+            Criteria criteria = new Criteria();
+            String bestProvider = String.valueOf(mLocationManager.getBestProvider(criteria, true)).toString();
+
+            //You can still do this if you like, you might get lucky:
+            Location location = mLocationManager.getLastKnownLocation(bestProvider);
+            if (location != null) {
+                Log.e("TAG", "GPS is on");
+                this.loc = location;
+            }
+            else{
+                //This is what you need:
+                mLocationManager.requestLocationUpdates(bestProvider, 1000, 0, this);
+            }
+
+
+    }
+
     private void startRecording(EID destination, boolean indicator, boolean auto_stop)
     {
     	synchronized(mRecLock) {
@@ -230,6 +259,8 @@ public class RecorderService extends Service {
             try {
                 Log.i(TAG, "create temporary file in " + path.getAbsolutePath());
 
+                getLocation();
+
                 // create temporary file
                 mCurrentFile = File.createTempFile("record", ".3gp", path);
                 
@@ -240,6 +271,8 @@ public class RecorderService extends Service {
                 mRecorder.setAudioChannels(1);
                 mRecorder.setAudioEncodingBitRate(23850);
 	            mRecorder.setOutputFile(mCurrentFile.getAbsolutePath());
+
+                mRecorder.setLocation((float)loc.getLatitude(), (float)loc.getLongitude());
 	            mRecorder.prepare();
 	            mRecorder.start();
 	            
@@ -269,6 +302,7 @@ public class RecorderService extends Service {
 	        try {
 	            // stop the recorder
 	            mRecorder.stop();
+
 	        } catch (java.lang.IllegalStateException e) {
 	            // error - not recording
 	        }
@@ -337,6 +371,8 @@ public class RecorderService extends Service {
 	            recorded_i.putExtra("recfile", f);
 	            recorded_i.putExtra("destination", (Serializable)mDestination);
 	            startService(recorded_i);
+
+
 	        }
 	        
             // set recording to false
@@ -472,4 +508,29 @@ public class RecorderService extends Service {
             mHandler.postDelayed(mUpdateAmplitude, 100);
         }
     };
+
+    @Override
+    public void onLocationChanged(Location location) {
+        if (location != null) {
+            loc.setLatitude(location.getLatitude());
+            loc.setLongitude(location.getLongitude());
+            Log.v("Location Changed", location.getLatitude() + " and " + location.getLongitude());
+            //mLocationManager.removeUpdates(this);
+        }
+    }
+
+    @Override
+    public void onStatusChanged(String provider, int status, Bundle extras) {
+
+    }
+
+    @Override
+    public void onProviderEnabled(String provider) {
+
+    }
+
+    @Override
+    public void onProviderDisabled(String provider) {
+
+    }
 }

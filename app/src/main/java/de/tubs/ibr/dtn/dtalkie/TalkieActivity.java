@@ -90,6 +90,7 @@ public class TalkieActivity extends FragmentActivity {
         Intent i = new Intent(this, HeadsetService.class);
         i.setAction(HeadsetService.LEAVE_HEADSET_MODE);
         startService(i);
+
     }
 
     @Override

@@ -16,12 +16,10 @@ def createVersionName() {
 android {
     compileSdkVersion rootProject.ext.compileSdkVersion
     buildToolsVersion rootProject.ext.buildToolsVersion
-
     defaultConfig {
         applicationId "de.tubs.ibr.dtn.dtalkie"
-        minSdkVersion 9
+        minSdkVersion 21
         targetSdkVersion 22
-        versionCode System.getenv("BUILD_NUMBER") as Integer ?: rootProject.ext.versionCode
         versionName createVersionName()
     }
     signingConfigs {
@@ -37,6 +35,8 @@ android {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
+    }
+    productFlavors {
     }
 }
 
