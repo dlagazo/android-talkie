@@ -16,6 +16,7 @@ def createVersionName() {
 android {
     compileSdkVersion rootProject.ext.compileSdkVersion
     buildToolsVersion rootProject.ext.buildToolsVersion
+    useLibrary  'org.apache.http.legacy'
     defaultConfig {
         applicationId "de.tubs.ibr.dtn.dtalkie"
         minSdkVersion 21
@@ -48,4 +49,6 @@ if (android.signingConfigs.release.storeFile.exists()) {
 dependencies {
     compile 'de.tubs.ibr.dtn:library:1.1.1'
     compile 'com.android.support:support-v4:23.1.1'
+    compile 'commons-io:commons-io:2.5'
+    compile project(':usbserial-release')
 }

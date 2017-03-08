@@ -7,12 +7,15 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.database.Cursor;
+import android.media.ExifInterface;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v4.app.ListFragment;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.Loader;
 import android.support.v4.widget.CursorAdapter;
+import android.util.Log;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.Menu;
@@ -21,6 +24,9 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.ListView;
+
+import java.io.IOException;
+
 import de.tubs.ibr.dtn.dtalkie.db.Message;
 import de.tubs.ibr.dtn.dtalkie.db.MessageDatabase;
 import de.tubs.ibr.dtn.dtalkie.db.MessageDatabase.Folder;
@@ -174,11 +180,33 @@ public class MessageFragment extends ListFragment implements LoaderManager.Loade
         MessageItem mitem = (MessageItem)v;
         if (mitem != null) {
             // play the selected message
+            Intent intent = new Intent();
+            intent.setAction(Intent.ACTION_VIEW);
+            Uri u = Uri.fromFile(mitem.getMessage().getFile());
+            intent.setDataAndType(u, "image/*");
+            Log.d("log", mitem.getMessage().getFile().getPath());
+            startActivity(intent);
+
+            try {
+                ExifInterface exif = new ExifInterface(mitem.getMessage().getFile().getAbsolutePath());
+                if(exif != null) {
+//                    Log.d("log", exif.getAttribute(ExifInterface.TAG_GPS_LONGITUDE));
+                }
+                //float[] gps = {};
+
+                //Log.d("log", Float.toString(gps[0]));
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            /*
             Intent play_i = new Intent(getActivity(), TalkieService.class);
             play_i.setAction(TalkieService.ACTION_PLAY);
             play_i.putExtra("folder", Folder.INBOX.toString());
             play_i.putExtra("message", mitem.getMessage().getId());
+
             getActivity().startService(play_i);
+            */
         }
     }
     

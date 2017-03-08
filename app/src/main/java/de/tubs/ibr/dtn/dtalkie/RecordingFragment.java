@@ -5,15 +5,18 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.media.AudioManager;
+import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.renderscript.ScriptGroup;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -26,6 +29,7 @@ import android.widget.FrameLayout;
 import android.widget.ImageButton;
 
 import java.io.ByteArrayOutputStream;
+import java.io.Console;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -61,6 +65,38 @@ public class RecordingFragment extends Fragment {
         super.onActivityResult(requestCode, resultCode, imageReturnedIntent);
             switch (requestCode)
             {
+                case 100:
+                    if(resultCode == getActivity().RESULT_OK){
+                        Uri selectedImage = imageReturnedIntent.getData();
+                        String[] filePathColumn = {MediaStore.Images.Media.DATA};
+
+                        Cursor cursor = getActivity().getContentResolver().query(
+                                selectedImage, filePathColumn, null, null, null);
+                        cursor.moveToFirst();
+
+                        int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
+                        String filePath = cursor.getString(columnIndex);
+                        cursor.close();
+                        try {
+                            ExifInterface exif = new ExifInterface(filePath);
+                            exif.setAttribute(ExifInterface.TAG_MAKE, "The quick brown fox jumped over the lazy dog near the riverbank.The quick brown fox jumped over the lazy dog near the riverbank.The quick brown fox jumped over the lazy dog near the riverbank.The quick brown fox jumped over the lazy dog near the riverbank.The quick brown fox jumped over the lazy dog near the riverbank.The quick brown fox jumped over the lazy dog near the riverbank.The quick brown fox jumped over the lazy dog near the riverbank.The quick brown fox jumped over the lazy dog near the riverbank.The quick brown fox jumped over the lazy dog near the riverbank.");
+                            exif.saveAttributes();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                        File f = new File(filePath);
+                        Log.d("log", filePath);
+
+
+                        Intent recorded_i = new Intent(getContext(), TalkieService.class);
+                        recorded_i.setAction(TalkieService.ACTION_RECORDED);
+                        recorded_i.putExtra("recfile", f);
+                        recorded_i.putExtra("destination", (Serializable) RecorderService.TALKIE_GROUP_EID);
+                        getContext().startService(recorded_i);
+
+                    }
+                break;
+
                 case 1888:
                     if(resultCode == getActivity().RESULT_OK)
                     {
@@ -73,6 +109,10 @@ public class RecordingFragment extends Fragment {
                             }else{
                                 bitmap = MediaStore.Images.Media.getBitmap(getActivity().getContentResolver(), imageReturnedIntent.getData());
                             }
+
+                            //ExifInterface exif = new ExifInterface(b);
+                            //Log.d("LOG", Double.toString(exif.getAttributeDouble(ExifInterface.TAG_GPS_LATITUDE, 0.0)));
+
                             //InputStream imageStream = getActivity().getContentResolver().openInputStream(selectedImage);
                             //Bitmap yourSelectedImage = BitmapFactory.decodeStream(imageStream);
                             Intent recorded_i = new Intent(getContext(), TalkieService.class);
@@ -83,7 +123,7 @@ public class RecordingFragment extends Fragment {
                             f.createNewFile();
 
                             ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                            bitmap.compress(Bitmap.CompressFormat.JPEG, 100 /*ignored for PNG*/, bos);
+                            bitmap.compress(Bitmap.CompressFormat.PNG, 100 /*ignored for PNG*/, bos);
                             byte[] bitmapdata = bos.toByteArray();
 
 //write the bytes in file
@@ -122,8 +162,16 @@ public class RecordingFragment extends Fragment {
                     break;
                     
                 case MotionEvent.ACTION_UP:
+                    Intent i = new Intent(Intent.ACTION_PICK,
+                            android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+                    startActivityForResult(i, 100);
+                    //Intent photoPickerIntent = new Intent(Intent.ACTION_PICK);
+                    //photoPickerIntent.setType("image/*");
+                    //startActivityForResult(photoPickerIntent, 100);
+                    /*
                     Intent cameraIntent = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
                     startActivityForResult(cameraIntent, 1888);
+                    */
                     //toggleRecording();
                     break;
             }

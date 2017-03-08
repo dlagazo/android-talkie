@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <CheckBoxPreference android:key="agg" android:title="Data Aggregator Mode" android:summary="Turns into hotspot and RF transceiver" />
+    <CheckBoxPreference android:key="res" android:title="Responder Mode" android:summary="Gets data from the field" />
+    <CheckBoxPreference android:key="hq" android:title="HQ Mode" android:summary="Gets all data from DTN and RF and uploads to server. " />
+
     <CheckBoxPreference android:key="autoplay" android:title="@string/pref_autoplay" android:summary="@string/pref_autoplay_desc" />
     <CheckBoxPreference android:key="sensor" android:summary="@string/pref_autorec_desc" android:defaultValue="false" android:title="@string/pref_autorec" />
     <CheckBoxPreference android:key="ptt" android:summary="@string/pref_ptt_desc" android:defaultValue="false" android:title="@string/pref_ptt" />

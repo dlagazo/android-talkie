@@ -1,10 +1,14 @@
 package de.tubs.ibr.dtn.dtalkie;
 
 import android.content.Context;
+import android.net.Uri;
 import android.util.AttributeSet;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+
+import java.io.File;
+
 import de.tubs.ibr.dtn.dtalkie.db.Message;
 
 public class MessageItem extends RelativeLayout {
@@ -57,8 +61,9 @@ public class MessageItem extends RelativeLayout {
         
         // set image mark
         mIcon.setImageLevel(mMessage.isMarked() ? 0 : 1);
-        
-        mLabel.setText(mMessage.getSource());
+
+        //mIcon.setImageURI(Uri.fromFile(new File(mMessage.getFile().getPath())));
+        mLabel.setText(mMessage.getFile().getPath());
         mBottomText.setText(created);
         
         // get delay
